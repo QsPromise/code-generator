@@ -1,0 +1,19 @@
+{
+  "name": "code-generator",
+  "version": "0.0.0",
+  "description": "",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "new": "plop"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "plop": "^4.0.1"
+  },
+  "dependencies": {
+    "node-cache": "^5.1.2"
+  }
+}
