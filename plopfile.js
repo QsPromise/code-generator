@@ -3,15 +3,65 @@
  * @create :2025-05-19 14:30 PM
  * @license :MIT
  * @LastEditor :qingshanscript
- * @lastEditTime :2025-05-21 15:30 PM
+ * @lastEditTime :2025-05-22 09:44 AM
  * @filePath :\code-generator\plopfile.js
  * @desc :
  */
-// import myCache from './cache.js';
-const getEmptyProps = (obj)=> {
-  return Object.keys(obj).find(key => obj[key] === "");
-}
-export default function (plop) {
+
+import fs from 'fs';
+import path from 'path';
+const CONFIG_PATH = path.join(process.cwd(), '.plop-config.json');
+
+// 隐藏的初始化生成器（不显示在交互菜单）
+const initGenerator = {
+  name: '!!init!!', // 特殊前缀隐藏生成器
+  description: 'Hidden initializer',
+  prompts: [
+    {
+      type: 'input',
+      name: 'projectRoot',
+      message: '默认项目根路径',
+      default: process.cwd()
+    },
+    // {
+    //   type: 'list',
+    //   name: 'projectType',
+    //   message: '项目类型',
+    //   choices: [
+    //     { name: 'vue', value: 'vue' },
+    //     { name: 'react', value: 'react' },
+    //     { name: '小程序', value: 'weapp' }
+    //   ],
+    //   default: "vue"
+    // },
+    // {
+    //   type: 'list',
+    //   name: 'projectStyle',
+    //   message: '样式预处理器',
+    //   choices: [
+    //     { name: '无需预处理器', value: 'css' },
+    //     { name: 'SCSS/SASS', value: 'scss' },
+    //     { name: 'LESS', value: 'less' },
+    //     { name: 'Stylus', value: 'stylus' }
+    //   ],
+    //   default: "css",
+    //   when: (answers) => answers.projectType === 'vue' // 只有当选择了VUE时才显示
+    // },
+  ],
+  actions: (answers) => {
+    fs.writeFileSync(CONFIG_PATH, JSON.stringify(answers, null, 2));
+    console.log('✅ 配置已初始化');
+    return [];
+  }
+};
+
+export default async function (plop) {
+  if (!fs.existsSync(CONFIG_PATH)) {
+    console.log('🛠 首次使用，正在初始化配置...');
+    const inquirer = (await import('inquirer')).default;
+    const answers = await inquirer.prompt(initGenerator.prompts);
+    initGenerator.actions(answers); // 关键点：以编程方式执行
+  }
   // 创建一个生成器
   plop.setGenerator('react', {
     description: '创建一个新的 React 模板',
@@ -52,13 +102,6 @@ export default function (plop) {
     ],    // 用户交互提示
     actions: function (app) {
       const config = plop.getGenerator('react');
-      // const value = myCache.get('key');
-// console.log('value=>',value);
-      // const err = getEmptyProps(app);
-      // if (err){
-      //   const { message } = config.prompts.find(item => item.name === err);
-      //   throw new Error(`❌ ${message.endsWith(':') ? message.slice(0, -1) : message}`);
-      // }
       if (app.type==='components') return [
         {
           type: 'add',  // 添加文件
@@ -86,4 +129,13 @@ export default function (plop) {
       ]
     }  // 执行的操作
   });
+  const cleanUp = () => {
+    try {
+      fs.unlink(TEMP_CONFIG);
+    } catch { }
+  };
+
+  process.on('beforeExit', cleanUp);
+  process.on('SIGINT', cleanUp);
+  process.on('uncaughtException', cleanUp);
 };

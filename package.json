@@ -12,8 +12,5 @@
   "license": "ISC",
   "devDependencies": {
     "plop": "^4.0.1"
-  },
-  "dependencies": {
-    "node-cache": "^5.1.2"
   }
 }
