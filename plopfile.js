@@ -47,11 +47,13 @@ const today = () => new Date().toISOString().slice(0, 10);
 export default function (plop) {
   const configExists = fs.existsSync(CONFIG_PATH);
   const config = configExists ? readConfig() : DEFAULT_CONFIG;
-  // 每个自然日第一次使用需要确认路径
-  const needConfirm = configExists && config.lastConfirmDate !== today();
-  // 首次使用 或 每日确认时选择不沿用 → 显示路径配置提问
+  // -path / --path：本次运行临时指定路径，询问但不保存
+  const overridePaths = process.argv.includes('-path') || process.argv.includes('--path');
+  // 每个自然日第一次使用需要确认路径（临时路径模式下跳过）
+  const needConfirm = !overridePaths && configExists && config.lastConfirmDate !== today();
+  // 临时路径模式、首次使用 或 每日确认时选择不沿用 → 显示路径配置提问
   const shouldAskPaths = (answers) =>
-    !configExists || (needConfirm && answers.useSavedPaths === false);
+    overridePaths || !configExists || (needConfirm && answers.useSavedPaths === false);
 
   plop.setGenerator('react', {
     description: '创建一个新的 React 模板',
@@ -145,8 +147,10 @@ export default function (plop) {
         },
         lastConfirmDate: today()
       };
-      // 首次使用或每日确认后，保存配置（同日后续运行不再打扰）
-      if (isFirstRun || needConfirm) {
+      // 首次使用或每日确认后，保存配置（同日后续运行不再打扰）；临时路径模式不写配置
+      if (overridePaths) {
+        console.log('📌 本次使用临时路径，不会写入配置');
+      } else if (isFirstRun || needConfirm) {
         writeConfig(next);
         console.log(isFirstRun ? '✅ 配置已初始化' : '✅ 路径配置已确认并保存');
       }

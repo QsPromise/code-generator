@@ -72,6 +72,21 @@ try {
   config = readConfig();
   assert(fs.existsSync(path.join(sandbox, 'lib', 'NewComp.js')), '每日确认-修改：按新路径生成组件');
   assert(config.paths.component === 'lib/{{name}}.js', '每日确认-修改：新路径已保存到配置');
+
+  // ---- 用例 4：-path 临时路径模式（不保存）----
+  config.lastConfirmDate = '2000-01-01'; // 即使在需要每日确认的日子里，-path 也应跳过确认且不写配置
+  const beforeOverride = JSON.stringify(config, null, 2);
+  fs.writeFileSync(configPath, beforeOverride);
+  process.argv.push('-path');
+  gen = await loadGenerator();
+  await gen.runActions({
+    pathPage: 'tmp/{{name}}.js',
+    type: 'page',
+    name: 'TempPage'
+  });
+  process.argv.pop();
+  assert(fs.existsSync(path.join(sandbox, 'tmp', 'TempPage.js')), '-path 模式：按临时路径生成文件');
+  assert(fs.readFileSync(configPath, 'utf-8') === beforeOverride, '-path 模式：配置文件未被修改');
 } finally {
   // 恢复真实配置并清理沙箱
   fs.writeFileSync(configPath, backup);
