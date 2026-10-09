@@ -1,6 +1,6 @@
 /**
  * 代码生成器入口（分支驱动）
- * 约定：分支名即生成器名，加载 generator/<branch>/index.js
+ * 约定：分支即生成器，加载固定槽位 generator/index.js（内容随分支而不同）
  * main 分支仅提供说明文档与共享代码（shared/），禁止运行 npm run new
  */
 import fs from 'fs';
@@ -12,9 +12,9 @@ const REPO_ROOT = path.dirname(fileURLToPath(import.meta.url));
 
 export default async function (plop) {
   const branch = resolveBranch();
-  const entry = path.join(REPO_ROOT, 'generator', branch, 'index.js');
+  const entry = path.join(REPO_ROOT, 'generator', 'index.js');
   if (!fs.existsSync(entry)) {
-    console.error(`⛔ 当前分支 '${branch || '未知'}' 没有对应生成器（generator/${branch}/index.js 不存在）`);
+    console.error(`⛔ 当前分支 '${branch || '未知'}' 没有对应生成器（generator/index.js 不存在）`);
     console.error('本项目为分支驱动：main 分支仅提供说明文档与共享代码，禁止运行 npm run new');
     const branches = listGeneratorBranches();
     if (branches.length) {
