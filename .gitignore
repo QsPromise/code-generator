@@ -2,7 +2,6 @@
 /node_modules
 /yarn.lock
 .omc/
-tests/
-tests-result/
-src/
-
+/tests-result/sandbox/
+/tests-result/abc-demo/
+/src/
