@@ -1,3 +1,8 @@
 /.vscode
 /node_modules
 /yarn.lock
+.omc/
+tests/
+tests-result/
+src/
+
