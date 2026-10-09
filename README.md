@@ -29,6 +29,6 @@
 | 生成器 | 说明 |
 | --- | --- |
 | `react` | 生成页面/公共组件/私有组件文件 |
-| `official-workflow` | 按 c2m frontend《新工作流开发指南》2.7 节清单生成官方工作流配套文件：目录 manifest、运行定义、可选启动表单与结果面板；生成后按提示手动注册 registry 与 i18n |
+| `official-workflow` | 按 c2m frontend《新工作流开发指南》2.7 节清单生成官方工作流配套文件：目录 manifest、运行定义、可选启动表单与结果面板；生成后按提示手动注册 registry 与 i18n。支持提供 API 接口文档（JSON 路径或粘贴，兼容 OpenAPI `paths` 与 `{endpoints:[...]}` 两种格式），自动产出 `src/api/<id>.ts` 并在运行定义中接线 `createRun`/`fetchStatus` |
 
 示例产物见 `tests-result/abc-demo/`（以 id `abc` 生成）。

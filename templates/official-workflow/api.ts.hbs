@@ -1,0 +1,20 @@
+// {{pascalCase id}} 工作流 API：由接口文档自动生成
+// TODO: 按后端真实契约核对请求/响应类型；请求路径按项目约定相对 /api/v1，鉴权/超时/重试由 http 封装统一处理
+// TODO: 确认项目 http 封装的导出方式与导入路径
+import http from './http'
+
+{{#each apis}}
+/**
+ * {{description}}
+ * {{method}} {{path}}
+ */
+export interface {{responseType}} {
+  // TODO: 按真实响应补充字段
+  [key: string]: unknown
+}
+
+export function {{fnName}}({{{signature}}}): Promise<{{responseType}}> {
+  return http.{{methodLower}}(`{{url}}`{{callArg}})
+}
+
+{{/each}}

@@ -44,6 +44,108 @@ const writeConfig = (config) =>
 
 const today = () => new Date().toISOString().slice(0, 10);
 
+// ---- 接口文档解析与 API 代码生成辅助 ----
+
+// 解析接口文档：支持 OpenAPI paths 结构，或简单格式 { endpoints: [{ name, method, path, description }] }
+const parseApiDoc = (raw) => {
+  const doc = JSON.parse(raw);
+  const endpoints = [];
+  if (Array.isArray(doc.endpoints)) {
+    for (const e of doc.endpoints) {
+      if (e && e.method && e.path) {
+        endpoints.push({
+          name: e.name || '',
+          method: String(e.method).toUpperCase(),
+          path: e.path,
+          description: e.description || ''
+        });
+      }
+    }
+  } else if (doc.paths && typeof doc.paths === 'object') {
+    for (const [p, ops] of Object.entries(doc.paths)) {
+      for (const [m, op] of Object.entries(ops || {})) {
+        endpoints.push({
+          name: op?.operationId || '',
+          method: m.toUpperCase(),
+          path: p,
+          description: op?.summary || op?.description || ''
+        });
+      }
+    }
+  }
+  return endpoints;
+};
+
+const camel = (s) =>
+  s
+    .replace(/[^a-zA-Z0-9]+(.)?/g, (_, c) => (c ? c.toUpperCase() : ''))
+    .replace(/^([A-Z])/, (c) => c.toLowerCase());
+
+// 将接口端点加工为模板可用的渲染数据（函数名、路径参数、签名等）
+const enrichEndpoint = (e) => {
+  if (!e) return null;
+  const params = [];
+  const url = e.path
+    .replace(/\{(\w+)\}/g, (_, p) => {
+      params.push(p);
+      return `\${${p}}`;
+    })
+    .replace(/:(\w+)/g, (_, p) => {
+      params.push(p);
+      return `\${${p}}`;
+    });
+  const hasBody = ['POST', 'PUT', 'PATCH'].includes(e.method);
+  const fnName = camel(e.name || `${e.method.toLowerCase()}-${e.path}`);
+  const signatureParts = params.map((p) => `${p}: string`);
+  if (hasBody) signatureParts.push('payload: Record<string, unknown>');
+  return {
+    ...e,
+    fnName,
+    responseType: fnName.charAt(0).toUpperCase() + fnName.slice(1) + 'Response',
+    url,
+    params,
+    signature: signatureParts.join(', '),
+    callArg: hasBody ? ', payload' : '',
+    callParams: params.join(', ') || '/* TODO: runId */',
+    methodLower: e.method.toLowerCase()
+  };
+};
+
+// 缓存已解析的接口文档，避免 choices 函数反复读文件
+let docCache = { key: null, endpoints: [] };
+const getEndpoints = (answers) => {
+  const key =
+    answers.apiDocSource === 'path'
+      ? `path:${answers.apiDocPath}`
+      : `json:${answers.apiDocJson}`;
+  if (docCache.key !== key) {
+    try {
+      const raw =
+        answers.apiDocSource === 'path'
+          ? fs.readFileSync(path.resolve(answers.apiDocPath), 'utf-8')
+          : answers.apiDocJson;
+      docCache = { key, endpoints: parseApiDoc(raw) };
+    } catch {
+      docCache = { key, endpoints: [] };
+    }
+  }
+  return docCache.endpoints;
+};
+
+const endpointChoice = (e) => ({
+  name: `${e.method} ${e.path}${e.description ? ` — ${e.description}` : ''}`,
+  value: e
+});
+
+const validateApiDoc = (raw) => {
+  try {
+    const endpoints = parseApiDoc(raw);
+    return endpoints.length > 0 ? true : '❌ 未解析到任何接口';
+  } catch (err) {
+    return `❌ JSON 解析失败：${err.message}`;
+  }
+};
+
 export default function (plop) {
   const configExists = fs.existsSync(CONFIG_PATH);
   const config = configExists ? readConfig() : DEFAULT_CONFIG;
@@ -194,12 +296,69 @@ export default function (plop) {
         name: 'needPanel',
         message: '是否需要专属结果面板？（共享结果面板可满足时选否）',
         default: false
+      },
+      {
+        type: 'list',
+        name: 'apiDocSource',
+        message: '是否提供 API 接口文档（用于生成接口调用）？',
+        choices: [
+          { name: '跳过', value: 'skip' },
+          { name: '指定文档路径（JSON）', value: 'path' },
+          { name: '粘贴 JSON 内容', value: 'paste' }
+        ],
+        default: 'skip'
+      },
+      {
+        type: 'input',
+        name: 'apiDocPath',
+        message: '接口文档路径（支持 OpenAPI paths 或 { endpoints: [...] }）:',
+        when: (a) => a.apiDocSource === 'path',
+        validate: (input) => {
+          try {
+            return validateApiDoc(fs.readFileSync(path.resolve(input), 'utf-8'));
+          } catch {
+            return '❌ 文件不存在或无法读取';
+          }
+        }
+      },
+      {
+        type: 'editor',
+        name: 'apiDocJson',
+        message: '粘贴接口文档 JSON（保存并关闭编辑器后继续）:',
+        when: (a) => a.apiDocSource === 'paste',
+        validate: validateApiDoc
+      },
+      {
+        type: 'list',
+        name: 'startApi',
+        message: '选择启动接口（createRun）:',
+        when: (a) => a.apiDocSource && a.apiDocSource !== 'skip',
+        choices: (a) => [
+          ...getEndpoints(a).filter((e) => e.method === 'POST').map(endpointChoice),
+          { name: '稍后手动实现', value: null }
+        ]
+      },
+      {
+        type: 'list',
+        name: 'statusApi',
+        message: '选择状态查询接口（fetchStatus）:',
+        when: (a) => a.apiDocSource && a.apiDocSource !== 'skip',
+        choices: (a) => [
+          ...getEndpoints(a).filter((e) => e.method === 'GET').map(endpointChoice),
+          { name: '稍后手动实现', value: null }
+        ]
       }
     ],
     actions: function (app) {
       const cfg = fs.existsSync(CONFIG_PATH) ? readConfig() : DEFAULT_CONFIG;
       const root = cfg.projectRoot;
       const pascalName = app.id.replace(/(^|[-_])([a-z0-9])/gi, (_, __, c) => c.toUpperCase());
+      // 接口文档 → 生成 API 调用
+      const apiStart = enrichEndpoint(app.startApi);
+      const apiStatus = enrichEndpoint(app.statusApi);
+      const apis = [...new Map([apiStart, apiStatus].filter(Boolean).map((e) => [e.fnName, e])).values()];
+      const apiImport = apis.map((e) => e.fnName).join(', ');
+      const apiModule = `../../../../../api/${app.id}`;
       const actions = [
         {
           type: 'add',
@@ -209,9 +368,18 @@ export default function (plop) {
         {
           type: 'add',
           path: path.join(root, 'src/pages/workflows/studio/official/definitions/{{id}}.ts'),
-          templateFile: 'templates/official-workflow/definition.ts.hbs'
+          templateFile: 'templates/official-workflow/definition.ts.hbs',
+          data: { apiImport, apiModule, apiStart, apiStatus }
         }
       ];
+      if (apis.length) {
+        actions.push({
+          type: 'add',
+          path: path.join(root, 'src/api/{{id}}.ts'),
+          templateFile: 'templates/official-workflow/api.ts.hbs',
+          data: { apis }
+        });
+      }
       if (app.needForm) {
         actions.push({
           type: 'add',
@@ -228,7 +396,8 @@ export default function (plop) {
       }
       // registry.ts 与 i18n 属于"修改已有文件"，打印人工操作清单
       console.log(`
-📋 还需手动完成：
+📋 还需手动完成：${apis.length ? `
+  0. src/api/${app.id}.ts 已生成 → 核对 http 封装导入路径与请求/响应类型（接口文档不含类型信息）` : ''}
   1. definitions/registry.ts → 在 definitions 映射中以键 '${app.id}' 注册 runtime definition（manifest + launch + resultComponent）
   2. src/i18n/ → 添加 cockpit.workflow${pascalName}Name / cockpit.workflow${pascalName}Description 及节点、表单、状态文案
   3. 确认后端契约：workflow_type、启动/状态/继续执行接口、节点模板与图标映射`);

@@ -21,6 +21,20 @@
 ✔ 工作流：启动表单生成
 ✔ 工作流：结果面板生成
 ✔ 工作流：manifest 内容渲染正确
+✔ 工作流：跳过接口文档时 definition 保留 TODO
+
+📋 还需手动完成：
+  0. src/api/abcapi.ts 已生成 → 核对 http 封装导入路径与请求/响应类型（接口文档不含类型信息）
+  1. definitions/registry.ts → 在 definitions 映射中以键 'abcapi' 注册 runtime definition（manifest + launch + resultComponent）
+  2. src/i18n/ → 添加 cockpit.workflowAbcapiName / cockpit.workflowAbcapiDescription 及节点、表单、状态文案
+  3. 确认后端契约：workflow_type、启动/状态/继续执行接口、节点模板与图标映射
+✔ API文档：api 模块生成
+✔ API文档：启动接口函数签名正确
+✔ API文档：启动接口请求正确
+✔ API文档：状态接口路径参数提取正确
+✔ API文档：状态接口路径插值正确
+✔ API文档：definition 导入 API 模块
+✔ API文档：definition 已接线 API 调用
 
 📋 还需手动完成：
   1. definitions/registry.ts → 在 definitions 映射中以键 'abc' 注册 runtime definition（manifest + launch + resultComponent）

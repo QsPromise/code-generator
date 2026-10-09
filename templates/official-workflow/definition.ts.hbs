@@ -2,6 +2,9 @@
 // 参考现有实现：research.ts（表单与交互门）、mcn.ts（人工审核与定制结果）、gaokao.ts（分支与 fan-out）
 // TODO: 按项目实际导出路径调整 defineWorkflow 与相关类型导入
 import { defineWorkflow } from '../shared'
+{{#if apiImport}}
+import { {{apiImport}} } from '{{apiModule}}'
+{{/if}}
 
 export default defineWorkflow({
   id: '{{id}}',
@@ -19,14 +22,30 @@ export default defineWorkflow({
   ],
   driver: {
     kind: 'polling',
+{{#if apiStart}}
+    // {{apiStart.method}} {{apiStart.path}}
+    createRun: async (payload) => {
+      const res = await {{apiStart.fnName}}(payload)
+      return res.runId // TODO: 按真实响应结构取 run id
+    },
+{{else}}
     // TODO: 调用 src/api 对应域模块中的启动接口，返回 run id
     createRun: async (payload) => {
       throw new Error('TODO: 实现 {{id}} 的启动接口适配')
     },
+{{/if}}
+{{#if apiStatus}}
+    // {{apiStatus.method}} {{apiStatus.path}}
+    fetchStatus: async (runId) => {
+      const res = await {{apiStatus.fnName}}({{apiStatus.callParams}})
+      return res // TODO: 后端步骤与画布节点不一致时在此清洗/映射，不要塞进共享引擎
+    }
+{{else}}
     // TODO: 调用状态接口；后端步骤与画布节点不一致时在此清洗/映射，不要塞进共享引擎
     fetchStatus: async (runId) => {
       throw new Error('TODO: 实现 {{id}} 的状态接口适配')
     }
+{{/if}}
     // 如有刷新恢复契约，补充 resume
   },
   outputs: [

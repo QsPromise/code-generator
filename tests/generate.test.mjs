@@ -103,6 +103,30 @@ try {
   assert(fs.existsSync(path.join(wfBase, 'pages/workflows/studio/official/panels/abc/AbcResultPanel.vue')), '工作流：结果面板生成');
   const manifestContent = fs.readFileSync(path.join(wfBase, 'data/official-workflows/manifests/abc.ts'), 'utf-8');
   assert(manifestContent.includes("id: 'abc'") && manifestContent.includes('workflowAbcName'), '工作流：manifest 内容渲染正确');
+  const todoDef = fs.readFileSync(path.join(wfBase, 'pages/workflows/studio/official/definitions/abc.ts'), 'utf-8');
+  assert(todoDef.includes('TODO: 实现 abc 的启动接口适配'), '工作流：跳过接口文档时 definition 保留 TODO');
+
+  // ---- 用例 6：提供接口文档 → 生成 API 调用并接线 ----
+  wgen = await loadWorkflowGenerator();
+  await wgen.runActions({
+    id: 'abcapi',
+    needForm: false,
+    needPanel: false,
+    apiDocSource: 'path',
+    apiDocPath: path.join(root, 'tests', 'fixtures', 'api-doc.json'),
+    startApi: { name: 'createAbcRun', method: 'POST', path: '/official-workflows/abc/runs', description: '启动 abc 工作流' },
+    statusApi: { name: 'getAbcRunStatus', method: 'GET', path: '/official-workflows/abc/runs/{runId}', description: '查询运行状态' }
+  });
+  const apiFile = path.join(sandbox, 'src', 'api', 'abcapi.ts');
+  assert(fs.existsSync(apiFile), 'API文档：api 模块生成');
+  const apiContent = fs.readFileSync(apiFile, 'utf-8');
+  assert(apiContent.includes('export function createAbcRun(payload: Record<string, unknown>)'), 'API文档：启动接口函数签名正确');
+  assert(apiContent.includes("http.post(`/official-workflows/abc/runs`, payload)"), 'API文档：启动接口请求正确');
+  assert(apiContent.includes('export function getAbcRunStatus(runId: string)'), 'API文档：状态接口路径参数提取正确');
+  assert(apiContent.includes('http.get(`/official-workflows/abc/runs/${runId}`)'), 'API文档：状态接口路径插值正确');
+  const wiredDef = fs.readFileSync(path.join(sandbox, 'src', 'pages', 'workflows', 'studio', 'official', 'definitions', 'abcapi.ts'), 'utf-8');
+  assert(wiredDef.includes("import { createAbcRun, getAbcRunStatus } from '../../../../../api/abcapi'"), 'API文档：definition 导入 API 模块');
+  assert(wiredDef.includes('await createAbcRun(payload)') && wiredDef.includes('await getAbcRunStatus(runId)'), 'API文档：definition 已接线 API 调用');
 
   // ---- 生成 abc 示例到 tests-result/abc-demo 供人工检查（不清理）----
   config.projectRoot = path.join(root, 'tests-result', 'abc-demo');
