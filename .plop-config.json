@@ -1,5 +1,12 @@
 {
   "projectRoot": "D:\\YQSWork\\code-generator",
-  "projectType": "vue",
-  "projectStyle": "less"
+  "paths": {
+    "page": "src/pages/{{name}}/index.js",
+    "component": "src/components/{{name}}/index.js",
+    "pagesComponent": "src/pages/{{pageName}}/components/{{name}}.js"
+  },
+  "templates": {
+    "component": "templates/component.hbs"
+  },
+  "lastConfirmDate": "2026-10-09"
 }

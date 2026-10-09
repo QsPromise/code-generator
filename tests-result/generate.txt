@@ -1,0 +1,4 @@
+✔ [page] [ '\\src\\pages\\TestPage\\index.js' ]
+✔ [component] [ '\\src\\components\\TestComp\\index.js' ]
+✔ [pages_component] [ '\\src\\pages\\TestPage\\components\\TestInner.js' ]
+ALL PASS
