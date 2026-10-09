@@ -1,0 +1,35 @@
+// 工作流运行定义：节点、DAG、driver、API 适配与输出声明
+// 参考现有实现：research.ts（表单与交互门）、mcn.ts（人工审核与定制结果）、gaokao.ts（分支与 fan-out）
+// TODO: 按项目实际导出路径调整 defineWorkflow 与相关类型导入
+import { defineWorkflow } from '../shared'
+
+export default defineWorkflow({
+  id: '{{id}}',
+  nameKey: 'cockpit.workflow{{pascalCase id}}Name',
+  descriptionKey: 'cockpit.workflow{{pascalCase id}}Description',
+  icon: 'MarketAnalysisIcon',
+  nodes: [
+    { id: 'start', type: 'start', labelKey: 'workflow.nodeStart' },
+    // TODO: 业务处理节点。节点 id 必须稳定，并与状态映射、等待门、结果面板使用的 id 对齐
+    { id: 'end', type: 'end', labelKey: 'workflow.nodeEnd' }
+  ],
+  edges: [
+    // TODO: 按真实业务 DAG 声明连线；row/alignTo/vCenterBetween 只影响布局，不代表依赖
+    { source: 'start', target: 'end' }
+  ],
+  driver: {
+    kind: 'polling',
+    // TODO: 调用 src/api 对应域模块中的启动接口，返回 run id
+    createRun: async (payload) => {
+      throw new Error('TODO: 实现 {{id}} 的启动接口适配')
+    },
+    // TODO: 调用状态接口；后端步骤与画布节点不一致时在此清洗/映射，不要塞进共享引擎
+    fetchStatus: async (runId) => {
+      throw new Error('TODO: 实现 {{id}} 的状态接口适配')
+    }
+    // 如有刷新恢复契约，补充 resume
+  },
+  outputs: [
+    // TODO: 声明输出以配合共享输出 renderer；复杂业务结果改用专属结果面板
+  ]
+})

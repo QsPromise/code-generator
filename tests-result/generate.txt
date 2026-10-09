@@ -11,4 +11,20 @@
 📌 本次使用临时路径，不会写入配置
 ✔ -path 模式：按临时路径生成文件
 ✔ -path 模式：配置文件未被修改
+
+📋 还需手动完成：
+  1. definitions/registry.ts → 在 definitions 映射中以键 'abc' 注册 runtime definition（manifest + launch + resultComponent）
+  2. src/i18n/ → 添加 cockpit.workflowAbcName / cockpit.workflowAbcDescription 及节点、表单、状态文案
+  3. 确认后端契约：workflow_type、启动/状态/继续执行接口、节点模板与图标映射
+✔ 工作流：manifest 生成
+✔ 工作流：definition 生成
+✔ 工作流：启动表单生成
+✔ 工作流：结果面板生成
+✔ 工作流：manifest 内容渲染正确
+
+📋 还需手动完成：
+  1. definitions/registry.ts → 在 definitions 映射中以键 'abc' 注册 runtime definition（manifest + launch + resultComponent）
+  2. src/i18n/ → 添加 cockpit.workflowAbcName / cockpit.workflowAbcDescription 及节点、表单、状态文案
+  3. 确认后端契约：workflow_type、启动/状态/继续执行接口、节点模板与图标映射
+DEMO 已生成到 tests-result/abc-demo
 ALL PASS

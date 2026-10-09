@@ -168,4 +168,71 @@ export default function (plop) {
       ];
     }
   });
+
+  // 官方工作流配套文件生成器（依据 c2m frontend 新工作流开发指南 2.7 节清单）
+  plop.setGenerator('official-workflow', {
+    description: '创建官方工作流配套文件（manifest/定义/表单/面板）',
+    prompts: [
+      {
+        type: 'input',
+        name: 'id',
+        message: '工作流 id（与路由 /workflow/official/:id 一致）:',
+        validate: (input) => {
+          if (!input) return '❌ id 不能为空';
+          if (!/^[a-z][a-z0-9-_]*$/.test(input)) return '❌ id 需以小写字母开头，仅含小写字母/数字/-/_';
+          return true;
+        }
+      },
+      {
+        type: 'confirm',
+        name: 'needForm',
+        message: '是否需要专属启动表单？',
+        default: true
+      },
+      {
+        type: 'confirm',
+        name: 'needPanel',
+        message: '是否需要专属结果面板？（共享结果面板可满足时选否）',
+        default: false
+      }
+    ],
+    actions: function (app) {
+      const cfg = fs.existsSync(CONFIG_PATH) ? readConfig() : DEFAULT_CONFIG;
+      const root = cfg.projectRoot;
+      const pascalName = app.id.replace(/(^|[-_])([a-z0-9])/gi, (_, __, c) => c.toUpperCase());
+      const actions = [
+        {
+          type: 'add',
+          path: path.join(root, 'src/data/official-workflows/manifests/{{id}}.ts'),
+          templateFile: 'templates/official-workflow/manifest.ts.hbs'
+        },
+        {
+          type: 'add',
+          path: path.join(root, 'src/pages/workflows/studio/official/definitions/{{id}}.ts'),
+          templateFile: 'templates/official-workflow/definition.ts.hbs'
+        }
+      ];
+      if (app.needForm) {
+        actions.push({
+          type: 'add',
+          path: path.join(root, `src/pages/workflows/studio/official/forms/{{id}}/${pascalName}StartForm.vue`),
+          templateFile: 'templates/official-workflow/StartForm.vue.hbs'
+        });
+      }
+      if (app.needPanel) {
+        actions.push({
+          type: 'add',
+          path: path.join(root, `src/pages/workflows/studio/official/panels/{{id}}/${pascalName}ResultPanel.vue`),
+          templateFile: 'templates/official-workflow/ResultPanel.vue.hbs'
+        });
+      }
+      // registry.ts 与 i18n 属于"修改已有文件"，打印人工操作清单
+      console.log(`
+📋 还需手动完成：
+  1. definitions/registry.ts → 在 definitions 映射中以键 '${app.id}' 注册 runtime definition（manifest + launch + resultComponent）
+  2. src/i18n/ → 添加 cockpit.workflow${pascalName}Name / cockpit.workflow${pascalName}Description 及节点、表单、状态文案
+  3. 确认后端契约：workflow_type、启动/状态/继续执行接口、节点模板与图标映射`);
+      return actions;
+    }
+  });
 };

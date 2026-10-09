@@ -30,6 +30,11 @@ const loadGenerator = async () => {
   return plop.getGenerator('react');
 };
 
+const loadWorkflowGenerator = async () => {
+  const plop = await nodePlop(plopfilePath);
+  return plop.getGenerator('official-workflow');
+};
+
 const readConfig = () => JSON.parse(fs.readFileSync(configPath, 'utf-8'));
 
 try {
@@ -87,6 +92,24 @@ try {
   process.argv.pop();
   assert(fs.existsSync(path.join(sandbox, 'tmp', 'TempPage.js')), '-path 模式：按临时路径生成文件');
   assert(fs.readFileSync(configPath, 'utf-8') === beforeOverride, '-path 模式：配置文件未被修改');
+
+  // ---- 用例 5：官方工作流配套文件（以 abc 为例）----
+  let wgen = await loadWorkflowGenerator();
+  await wgen.runActions({ id: 'abc', needForm: true, needPanel: true });
+  const wfBase = path.join(sandbox, 'src');
+  assert(fs.existsSync(path.join(wfBase, 'data/official-workflows/manifests/abc.ts')), '工作流：manifest 生成');
+  assert(fs.existsSync(path.join(wfBase, 'pages/workflows/studio/official/definitions/abc.ts')), '工作流：definition 生成');
+  assert(fs.existsSync(path.join(wfBase, 'pages/workflows/studio/official/forms/abc/AbcStartForm.vue')), '工作流：启动表单生成');
+  assert(fs.existsSync(path.join(wfBase, 'pages/workflows/studio/official/panels/abc/AbcResultPanel.vue')), '工作流：结果面板生成');
+  const manifestContent = fs.readFileSync(path.join(wfBase, 'data/official-workflows/manifests/abc.ts'), 'utf-8');
+  assert(manifestContent.includes("id: 'abc'") && manifestContent.includes('workflowAbcName'), '工作流：manifest 内容渲染正确');
+
+  // ---- 生成 abc 示例到 tests-result/abc-demo 供人工检查（不清理）----
+  config.projectRoot = path.join(root, 'tests-result', 'abc-demo');
+  fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+  wgen = await loadWorkflowGenerator();
+  await wgen.runActions({ id: 'abc', needForm: true, needPanel: true });
+  console.log('DEMO 已生成到 tests-result/abc-demo');
 } finally {
   // 恢复真实配置并清理沙箱
   fs.writeFileSync(configPath, backup);
