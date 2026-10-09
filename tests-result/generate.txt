@@ -1,4 +1,11 @@
-✔ [page] [ '\\src\\pages\\TestPage\\index.js' ]
-✔ [component] [ '\\src\\components\\TestComp\\index.js' ]
-✔ [pages_component] [ '\\src\\pages\\TestPage\\components\\TestInner.js' ]
+✅ 配置已初始化
+✔ 首次运行：页面文件按自定义路径生成
+✔ 首次运行：配置已写入自定义路径
+✔ 首次运行：已记录确认日期
+✅ 路径配置已确认并保存
+✔ 每日确认-沿用：按已保存路径生成组件
+✔ 每日确认-沿用：确认日期已更新为今日
+✅ 路径配置已确认并保存
+✔ 每日确认-修改：按新路径生成组件
+✔ 每日确认-修改：新路径已保存到配置
 ALL PASS
