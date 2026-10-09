@@ -39,6 +39,10 @@ export const camel = (s) =>
     .replace(/[^a-zA-Z0-9]+(.)?/g, (_, c) => (c ? c.toUpperCase() : ''))
     .replace(/^([A-Z])/, (c) => c.toLowerCase());
 
+// 清洗路径输入：资源管理器"复制为路径"会带首尾引号，粘贴后需剥掉
+export const sanitizePathInput = (input) =>
+  (input || '').trim().replace(/^["']+|["']+$/g, '');
+
 // 将接口端点加工为模板可用的渲染数据（函数名、路径参数、签名等）
 export const enrichEndpoint = (e) => {
   if (!e) return null;
@@ -74,13 +78,13 @@ let docCache = { key: null, endpoints: [] };
 export const getEndpoints = (answers) => {
   const key =
     answers.apiDocSource === 'path'
-      ? `path:${answers.apiDocPath}`
+      ? `path:${sanitizePathInput(answers.apiDocPath)}`
       : `json:${answers.apiDocJson}`;
   if (docCache.key !== key) {
     try {
       const raw =
         answers.apiDocSource === 'path'
-          ? fs.readFileSync(path.resolve(answers.apiDocPath), 'utf-8')
+          ? fs.readFileSync(path.resolve(sanitizePathInput(answers.apiDocPath)), 'utf-8')
           : answers.apiDocJson;
       docCache = { key, endpoints: parseApiDoc(raw) };
     } catch {
