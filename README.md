@@ -36,7 +36,7 @@ npm run new                 # 只会出现当前分支对应的生成器
 | 分支 | 生成器 | 说明 |
 | --- | --- | --- |
 | `react` | `react` | 生成页面/公共组件/私有组件文件；支持 `-path` 临时路径模式（仅本次生效，不写配置） |
-| `official-workflow` | `official-workflow` | 按 c2m frontend《新工作流开发指南》2.7 节清单生成官方工作流配套文件（manifest/定义/表单/面板），支持提供 API 接口文档自动生成 `src/api/<id>.ts` 并接线 |
+| `official-workflow` | `official-workflow` | 按 c2m frontend《新工作流开发指南》2.7 节清单生成官方工作流配套文件（manifest/定义/启动表单/参数表单/节点渲染器），支持提供 API 接口文档自动生成 `src/api/<id>.ts` 并接线 |
 
 ## 通用能力（shared）
 
