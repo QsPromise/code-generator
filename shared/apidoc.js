@@ -69,7 +69,8 @@ export const enrichEndpoint = (e) => {
     signature: signatureParts.join(', '),
     callArg: hasBody ? ', payload' : '',
     callParams: params.join(', ') || '/* TODO: runId */',
-    methodLower: e.method.toLowerCase()
+    methodLower: e.method.toLowerCase(),
+    helper: `$${e.method.toLowerCase()}` // 目标项目 http 封装：$get/$post/$put/$patch/$delete（文件上传用 $postForm）
   };
 };
 
